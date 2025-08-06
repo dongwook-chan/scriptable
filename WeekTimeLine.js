@@ -3,27 +3,26 @@
 // icon-color: light-brown; icon-glyph: magic;
 // DistractionWeeklyTimeline_WithMarginAndNoColumnGap.js
 // Scriptable Large widget: weekly 9–23 timeline, per-calendar colors,
-// 2 px safe-margin, 6 px inset for rounded-corner clearance,
-// no gap between day columns, events through Sunday 23:00,
-// aligned grid & events exactly to eliminate 1 px gaps.
+// 2 px safe-margin, 6 px inset, no gap between day columns,
+// events through Sunday 23:00, pixel-snapped grid & rectangles.
 
 ;(async () => {
   console.log("🏁 Script start");
 
-  // ── 1) Settings & time window ───────────────────────────────────────────────
-  const M          = 2;   // 2 px widget margin
-  const INSET      = 6;   // 6 px inset inside margin
-  const START_HOUR = 9;   // timeline begins at 09:00
-  const END_HOUR   = 23;  // timeline ends   at 23:00
+  // ── 1) Settings & week window ───────────────────────────────────────────────
+  const M          = 2;     // 2 px outer margin
+  const INSET      = 6;     // 6 px inner inset for rounded corners
+  const START_HOUR = 9;     // timeline from 09:00
+  const END_HOUR   = 23;    // to 23:00
 
-  // Compute Monday @00:00 baseline
+  // Compute this week’s Monday @00:00
   const now       = new Date();
   const diffToMon = (now.getDay() + 6) % 7;
   const monMid    = new Date(now);
   monMid.setDate(now.getDate() - diffToMon);
   monMid.setHours(0, 0, 0, 0);
 
-  // Window: Mon 09:00 → next Mon 23:00
+  // Window: Mon 09:00 → next Mon 23:00
   const weekStart = new Date(monMid);
   weekStart.setHours(START_HOUR, 0, 0, 0);
   const weekEnd   = new Date(monMid);
@@ -32,7 +31,7 @@
 
   console.log(`📆 Window: ${weekStart.toISOString()} → ${weekEnd.toISOString()}`);
 
-  // ── 2) Fetch Distraction events back 7 weeks through Sunday 23:00 ──────────
+  // ── 2) Fetch Distraction events (7 weeks back → Sunday 23:00) ──────────────
   const today     = new Date();
   const dow       = today.getDay();
   const offsetMon = (dow + 6) % 7;
@@ -47,88 +46,98 @@
       : [];
   console.log(`🧪 Fetched events: ${disEvents.length}`);
 
-  // Dummy Tuesday 10–12 for visual check
+  // Inject dummy Tuesday 10–12 for visual check
   disEvents.push({
-    calendar: { title: 'Distraction', color: distraction?.color },
-    title:    '🔷 Dummy',
-    startDate: new Date(weekStart.getTime() + 1 * 86400000 + 1 * 3600000),
-    endDate:   new Date(weekStart.getTime() + 1 * 86400000 + 3 * 3600000)
+    calendar:  { title: 'Distraction', color: distraction?.color },
+    title:     '🔷 Dummy',
+    startDate: new Date(weekStart.getTime() + 1*86400000 + 1*3600000),
+    endDate:   new Date(weekStart.getTime() + 1*86400000 + 3*3600000)
   });
   console.log(`🧪 + dummy → ${disEvents.length}`);
 
   // ── 3) Layout math & DrawContext ────────────────────────────────────────────
   const W         = 364, H = 364;
-  const contentW  = W - 2 * (M + INSET); // left+right
-  const contentH  = H - 2 * (M + INSET); // top+bottom
+  const contentW  = W - 2*(M + INSET);  // inner width
+  const contentH  = H - 2*(M + INSET);  // inner height
   const hours     = END_HOUR - START_HOUR; // 14 rows
   const rows      = hours, cols = 7;
-  const rowH      = contentH / rows;
+  const rowHraw   = contentH / rows;      // may be fractional
   const colW      = contentW / cols;
+
+  console.log(`Layout → contentW:${contentW}, contentH:${contentH}, rowHraw:${rowHraw.toFixed(3)}, colW:${colW.toFixed(3)}`);
 
   const ctx = new DrawContext();
   ctx.size               = new Size(W, H);
   ctx.opaque             = true;
   ctx.respectScreenScale = true;
 
-  // Fill background behind rounded corners
+  // Fill background (behind rounded corners)
   ctx.setFillColor(new Color('#000'));
   ctx.fillRect(new Rect(0, 0, W, H));
 
-  // ── 4) Draw horizontal grid lines exactly on each hour line ────────────────
+  // ── 4) Draw pixel‐snapped horizontal grid lines ─────────────────────────────
   ctx.setFillColor(new Color('#555'));
   for (let i = 0; i <= rows; i++) {
-    // No +0.5 so grid lines align on whole‐pixel boundaries
-    const y = M + INSET + i * rowH;
+    // compute raw position, then round to nearest whole pixel
+    const yRaw = M + INSET + i * rowHraw;
+    const y    = Math.round(yRaw);
     ctx.fillRect(new Rect(M + INSET, y, contentW, 1));
   }
 
-  // ── 5) Draw each event, clamped 09:00–23:00, inset by INSET ───────────────
+  // ── 5) Draw events as pixel-snapped rectangles ─────────────────────────────
   console.log("✏️ Drawing events");
   for (const ev of disEvents) {
     const s = ev.startDate, e = ev.endDate;
-    const dayIndex = Math.floor((s - monMid) / 86400000);
-    if (dayIndex < 0 || dayIndex > 6) continue;
+    const di = Math.floor((s - monMid) / 86400000);
+    if (di < 0 || di > 6) continue;
 
-    // Clamp to our 09:00–23:00 window
-    const dayBase = new Date(monMid.getTime() + dayIndex * 86400000);
-    const clampS  = new Date(dayBase); clampS.setHours(START_HOUR, 0, 0, 0);
-    const clampE  = new Date(dayBase); clampE.setHours(END_HOUR,   0, 0, 0);
+    // clamp to 09:00–23:00
+    const dayBase = new Date(monMid.getTime() + di * 86400000);
+    const clampS  = new Date(dayBase); clampS.setHours(START_HOUR,0,0,0);
+    const clampE  = new Date(dayBase); clampE.setHours(END_HOUR,  0,0,0);
     const start   = new Date(Math.max(s, clampS));
     const end     = new Date(Math.min(e, clampE));
     if (end <= start) continue;
 
-    // Compute Y and height
-    const sH = start.getHours() + start.getMinutes() / 60;
-    const eH = end.getHours()   + end.getMinutes()   / 60;
-    // No rounding needed—rowH * integer span will be exact on pixel boundaries
-    const y1  = M + INSET + (sH - START_HOUR) * rowH;
-    let   hgt = (eH - sH) * rowH;
-    if (hgt < rowH * 0.3) hgt = rowH * 0.3;
+    // compute raw y & height
+    const sH    = start.getHours() + start.getMinutes()/60;
+    const eH    = end.getHours()   + end.getMinutes()/60;
+    const yRaw  = M + INSET + (sH - START_HOUR) * rowHraw;
+    const hRaw  = (eH - sH) * rowHraw;
+    // enforce minimum display height
+    const minH  = rowHraw * 0.3;
+    const hClamped = Math.max(hRaw, minH);
 
-    // Ensure bottom flush at 23:00
+    // pixel-snap y and height
+    let yPix = Math.round(yRaw);
+    let hPix = Math.round(hClamped);
+
+    // clamp to bottom
     const bottom = M + INSET + contentH;
-    if (y1 + hgt > bottom) hgt = bottom - y1;
+    if (yPix + hPix > bottom) {
+      hPix = bottom - yPix;
+    }
 
-    const x1 = M + INSET + dayIndex * colW;
+    // compute x & width (no rounding needed horizontally)
+    const xRaw = M + INSET + di * colW;
+    const xPix = Math.round(xRaw);
+    const wPix = Math.round(Math.min(colW, M + INSET + contentW - xRaw));
 
-    // Draw event block
+    // draw rectangle
     ctx.setFillColor(ev.calendar?.color || new Color('#95A5A6'));
-    ctx.fillRect(new Rect(x1, y1, colW, hgt));
+    ctx.fillRect(new Rect(xPix, yPix, wPix, hPix));
 
-    // Draw title inset by 4px
-    const insetText = 4;
-    const txtR = new Rect(
-        x1 + insetText,
-        y1 + insetText,
-        colW - insetText * 2,
-        hgt   - insetText * 2
-    );
+    // draw title inset by 4 px
+    const ti = 4;
     ctx.setFont(Font.systemFont(10));
     ctx.setTextColor(new Color('#FFF'));
-    ctx.drawTextInRect(ev.title || '', txtR);
+    ctx.drawTextInRect(
+        ev.title || '',
+        new Rect(xPix + ti, yPix + ti, wPix - ti*2, hPix - ti*2)
+    );
   }
 
-  // ── 6) Present the widget ──────────────────────────────────────────────────
+  // ── 6) Present widget ───────────────────────────────────────────────────────
   console.log("🔍 Presenting widget");
   const widget           = new ListWidget();
   widget.backgroundImage = ctx.getImage();

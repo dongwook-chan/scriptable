@@ -1,4 +1,4 @@
-// ver 0.0.2
+// ver 0.0.3
 // Variables used by Scriptable.
 // icon-color: light-brown; icon-glyph: magic;
 // DistractionWeeklyTimeline_WithMarginAndNoColumnGap.js
@@ -59,6 +59,7 @@
   // ── 3) Prepare drawing context
   const W        = 364;
   const H        = 364;
+  // **FIXED**: use W - 2*M, H - 2*M instead of W * M / H * M
   const contentW = W - 2 * M; // 360
   const contentH = H - 2 * M; // 360
   const hours    = END_HOUR - START_HOUR; // 14
@@ -117,7 +118,7 @@
     ctx.setFillColor(fillColor);
 
     // Draw the event block
-    const rect = new Rect(x1, y1, colW, hgt);
+    const rect = new Rect(x1 + 6, y1 + 6, colW, hgt);
     ctx.fillRect(rect);
 
     // Draw the title inset by 4px

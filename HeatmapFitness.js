@@ -19,11 +19,11 @@ const MAX_MINUTES    = 30;         // cap for the lightest shade
 
 // 5-step palette (0 → 30+ minutes), grey→skin-pink
 const COLORS = [
-  "#333333", // 0
-  "#7e3633", // 1: deep rose + 10% yellow
-  "#bd626c", // 2: rich pink + 10% yellow
-  "#e9959f", // 3: soft pink + 10% yellow
-  "#fcd1cf"  // 4: pastel baby-pink + 10% yellow
+  "#333333", // 0: no activity
+  "#663f35", // 1: muted terracotta–brown (warm base)
+  "#b07a63", // 2: rich apricot–peach
+  "#ebb6a0", // 3: soft light peach
+  "#ffe3d5"  // 4: pale creamy skin tone
 ];
 
 // 1) Compute cellSize & number of columns

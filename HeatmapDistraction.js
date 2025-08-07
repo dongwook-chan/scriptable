@@ -1,6 +1,6 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: green; icon-glyph: magic;
+// icon-color: pink; icon-glyph: times-circle;
 
 // 대상 달력(CALENDAR_NAME): Distraction
 // 집계 방식: event count per day

@@ -1,6 +1,6 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: orange; icon-glyph: magic;
+// icon-color: light-gray; icon-glyph: calendar-alt;
 // Open Calendar to Today’s View (Scriptable)
 
 let now      = new Date();

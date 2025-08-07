@@ -1,6 +1,6 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: red; icon-glyph: magic;
+// icon-color: deep-green; icon-glyph: user-graduate;
 
 // 대상 달력(CALENDAR_NAME): Focusmate
 // 집계 방식: hours per day

@@ -1,5 +1,6 @@
-// ver 0.2.4
-// icon-color: yellow; icon-glyph: magic;
+// Variables used by Scriptable.
+// These must be at the very top of the file. Do not edit.
+// icon-color: deep-gray; icon-glyph: calendar-check;
 
 console.log("🟢 Widget generation started (ver 0.2.4)");
 
@@ -29,6 +30,57 @@ const PALETTES = {
   Meditate:  ["#333","#79C9B1","#53B69B","#2F9C82","#0A8068"],
   Distraction: ["#333","#6e2222","#952b2b","#c84040","#ff5f5f"]
 };
+
+const COLORS_ORANGE = [
+  "#333333", // 0
+  "#7f3f00", // 1: dark burnt orange
+  "#b25a00", // 2: medium rich orange
+  "#e0741b", // 3: vibrant orange
+  "#ffac33"  // 4: light golden orange
+];
+
+const COLORS_PINK = [
+  "#333333", // 0
+  "#702039", // 1: deep rose
+  "#b65078", // 2: rich pink
+  "#e789b1", // 3: soft pink
+  "#fccce6"  // 4: pastel baby-pink
+];
+
+const COLORS_AQUA = [
+  "#333333", // 0
+  "#00524e", // 1: dark teal
+  "#007a78", // 2: medium teal
+  "#00a79f", // 3: bright aqua
+  "#33cfc7"  // 4: light minty aqua
+];
+
+// Bluish-Purple levels
+const COLORS_BLUISH_PURPLE = [
+  "#333333", // 0: no activity
+  "#412b58", // 1: deep bluish-purple
+  "#5c4985", // 2: medium slate purple
+  "#7a6cb3", // 3: vibrant bluish-purple
+  "#9a8edf"  // 4: light pastel bluish-purple
+];
+
+// Bluish-Purple levels (extra-blue)
+const COLORS_BLUISH_PURPLE = [
+  "#333333", // 0: no activity
+  "#2e2f65", // 1: dark navy-purple
+  "#3f4dc0", // 2: medium vibrant indigo
+  "#5975eb", // 3: bright periwinkle-blue
+  "#8aa9fe"  // 4: light sky-blue purple
+];
+
+const COLORS_PURPLE = [
+  "#333333", // 0
+  "#3d1f47", // 1: deep plum
+  "#602b70", // 2: rich purple
+  "#914da5", // 3: lavender purple
+  "#b682d1"  // 4: light lilac
+];
+
 
 /////////////////////////////////////////////////////////
 // 1) Layout

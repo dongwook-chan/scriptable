@@ -1,17 +1,14 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: yellow; icon-glyph: magic;
-// CalendarHeatmapFocusmateGitHubHours
-// Small (≈155×155 pt) GitHub–style green heatmap of “Focusmate” events
-//  • Monday–row 0 … Sunday–row 6, as many columns as fit  
-//  • Only Mon–Wed in the final column (today = Wednesday)  
-//  • 4 pt margin all around and between cells; transparent BG  
-//  • 0 hours = dark grey, then green shades lightening up to 9 hours = lightest green  
+// icon-color: red; icon-glyph: magic;
+
+// 대상 달력(CALENDAR_NAME): Focusmate
+// block 곡률(R): 3
 
 const SIZE           = 150;        // Small widget canvas size
 const ROWS           = 7;          // days per column
 const M              = 4;          // fixed margin between & around cells
-const R              = 0;          // corner radius
+const R              = 3;          // corner radius
 const CALENDAR_NAME  = "Focusmate";// calendar to draw
 const MAX_HOURS      = 9;          // cap for the lightest shade
 

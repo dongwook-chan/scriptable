@@ -1,138 +1,181 @@
-// ver 0.1.9
-// Variables used by Scriptable.
+// ver 0.2.4
 // icon-color: yellow; icon-glyph: magic;
 
-// 대상 달력(CALENDAR_NAME): Focusmate, Distraction
-// block 곡률(R): 3
+console.log("🟢 Widget generation started (ver 0.2.4)");
 
-console.log("🟢 Widget generation started (ver 0.1.9)");
+const W            = 364;
+const H            = 364;
+const SAFE_MARGIN  = 8;           // 2px widget + 6px inset
+const GRID_W       = 4.5;
+const START_HOUR   = 9;
+const END_HOUR     = 23;
+const HOURS        = END_HOUR - START_HOUR; // 14
+const DAYS         = 7;
+const MAX_DIST     = 4;
+const R            = 4;
 
-const W           = 364;
-const H           = 364;
-const SAFE_MARGIN = 2 + 6;       // 2px widget margin + 6px corner inset
-const GRID_W      = 4.5;         // fractional grid width
-const START_HOUR  = 9;
-const END_HOUR    = 23;
-const HOURS       = END_HOUR - START_HOUR; // 14 rows
-const DAYS        = 7;           // Mon…Sun
-const CALS        = ["Focusmate", "Distraction"];
-const MAX_EVENTS  = 4;           // cap for Distraction count mapping
-const R = 4; // corner radius for cells
+// your calendars
+const PRIMARY_CALS    = ["Focusmate","Fitness","Meditate"];
+const DISTRACTION_CAL = "Distraction";
+const ALL_CALS        = [...PRIMARY_CALS, DISTRACTION_CAL];
 
-// Green palette for Focusmate / Red palette for Distraction (darkest at low counts)
-const COLORS_F = [
-  "#333333", // 0 min
-  "#174d25", // 1–14 min
-  "#1e7533", // 15–29 min
-  "#32b150", // 30–49 min
-  "#40d663"  // ≥ 50 min
-];
-const COLORS_D = [
-  "#333333", // 0
-  "#6e2222", // 1
-  "#952b2b", // 2
-  "#c84040", // 3
-  "#ff5f5f"  // ≥ 4
-];
+// day names for logging
+const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
-console.log("Constants:", { W, H, SAFE_MARGIN, GRID_W, START_HOUR, END_HOUR, HOURS, DAYS, CALS, MAX_EVENTS, R });
+// color ramps
+const PALETTES = {
+  Focusmate:   ["#333","#174d25","#1e7533","#32b150","#40d663"],
+  Fitness:     ["#333","#FFD1DC","#FFADC1","#FF7791","#FF3E61"],
+  Meditate:  ["#333","#79C9B1","#53B69B","#2F9C82","#0A8068"],
+  Distraction: ["#333","#6e2222","#952b2b","#c84040","#ff5f5f"]
+};
 
-// 1) Compute content area & cell sizes
-const contentW = W - 2 * SAFE_MARGIN;
-const contentH = H - 2 * SAFE_MARGIN;
-const COLS     = DAYS * CALS.length;
+/////////////////////////////////////////////////////////
+// 1) Layout
+console.log("Layout constants:", {W,H,SAFE_MARGIN,GRID_W,START_HOUR,END_HOUR,HOURS,DAYS});
+const contentW = W - SAFE_MARGIN*2;
+const contentH = H - SAFE_MARGIN*2;
+const COLS     = DAYS * 2;    // left=primary, right=distraction
 const ROWS     = HOURS;
-const cellW    = (contentW - (COLS - 1) * GRID_W) / COLS;
-const cellH    = (contentH - (ROWS - 1) * GRID_W) / ROWS;
+const cellW    = (contentW - (COLS-1)*GRID_W) / COLS;
+const cellH    = (contentH - (ROWS-1)*GRID_W) / ROWS;
+console.log("Cell size:", {cellW, cellH});
 
-// 2) Compute this week’s Monday @00:00 → Sunday @END_HOUR
-const now       = new Date();
-const dow       = now.getDay();
-const diffToMon = (dow + 6) % 7;
-const monMid    = new Date(now);
+/////////////////////////////////////////////////////////
+// 2) This week’s window
+const now        = new Date();
+const dow        = now.getDay();
+const diffToMon  = (dow + 6) % 7;
+const monMid     = new Date(now);
 monMid.setDate(now.getDate() - diffToMon);
-monMid.setHours(0, 0, 0, 0);
+monMid.setHours(0,0,0,0);
 
-const weekStart = new Date(monMid);
-weekStart.setHours(START_HOUR, 0, 0, 0);
-const weekEnd   = new Date(monMid);
-weekEnd.setDate(monMid.getDate() + 7);
-weekEnd.setHours(END_HOUR, 0, 0, 0);
+const weekStart  = new Date(monMid); weekStart.setHours(START_HOUR,0,0,0);
+const weekEnd    = new Date(monMid); weekEnd.setDate(monMid.getDate()+7);
+weekEnd.setHours(END_HOUR,0,0,0);
 
-const msPerDay         = 24 * 60 * 60 * 1000;
-const currentDayIndex  = Math.floor((now - monMid) / msPerDay);
-const currentHourIndex = now.getHours() - START_HOUR;
+console.log("Week span:", { weekStart: weekStart.toString(), weekEnd: weekEnd.toString() });
 
-// 3) Fetch calendars & 4) fetch events
-const allCals = await Calendar.forEvents();
-const calMaps = CALS.map(name => allCals.find(c => c.title === name) || null);
+const msPerDay       = 86400e3;
+const currentDayIdx  = Math.floor((now - monMid)/msPerDay);
+const currentHourIdx = now.getHours() - START_HOUR;
+console.log("Now is", now.toString(), "→ currentDayIdx=", currentDayIdx, "currentHourIdx=", currentHourIdx);
+
+/////////////////////////////////////////////////////////
+// 3) Fetch calendars & events
+console.log("Fetching calendars…");
+const allCals  = await Calendar.forEvents();
+const calMaps  = ALL_CALS.map(name => {
+  const c = allCals.find(x => x.title.toLowerCase() === name.toLowerCase());
+  if (!c) console.warn(`⚠️ Calendar not found: “${name}”`);
+  return c || null;
+});
+console.log("Calendar mappings (in order):", ALL_CALS.map((n,i)=>(calMaps[i]? calMaps[i].title : null)));
+
+console.log("Fetching events for each calendar…");
 const calEvents = await Promise.all(
-    calMaps.map(async (cal) => cal ? await CalendarEvent.between(weekStart, weekEnd, [cal]) : [])
+    calMaps.map(c => c
+        ? CalendarEvent.between(weekStart, weekEnd, [c])
+        : Promise.resolve([])
+    )
 );
+calEvents.forEach((evs,i) => {
+  console.log(`  → ${ALL_CALS[i]}: ${evs.length} events`);
+});
 
-// 5) Bin events into [day][hour] slots
-const bins = calEvents.map((events, ci) => {
-  const b = Array.from({ length: DAYS }, () => Array(ROWS).fill(0));
-  for (const ev of events) {
-    const s  = ev.startDate, e = ev.endDate;
-    const di = Math.floor((s - monMid) / msPerDay);
-    if (di < 0 || di >= DAYS) continue;
-    const dayBase = new Date(monMid.getTime() + di * msPerDay);
-    for (let h = START_HOUR; h < END_HOUR; h++) {
-      const slotStart = new Date(dayBase); slotStart.setHours(h,0,0,0);
-      const slotEnd   = new Date(dayBase); slotEnd.setHours(h+1,0,0,0);
-      if (s < slotEnd && e > slotStart) {
-        const hi = h - START_HOUR;
-        if (ci === 0) {
-          const overlapStart = s > slotStart ? s : slotStart;
-          const overlapEnd   = e < slotEnd   ? e : slotEnd;
-          b[di][hi] += (overlapEnd - overlapStart) / 60000;
-        } else {
-          b[di][hi] = Math.min(b[di][hi] + 1, MAX_EVENTS);
+/////////////////////////////////////////////////////////
+// 4) Bin every calendar into a DAYS×HOURS matrix
+console.log("Binning events into slots…");
+const bins = calEvents.map((events, idx) => {
+  const mat = Array.from({length:DAYS},()=>Array(ROWS).fill(0));
+  for (let ev of events) {
+    const s = ev.startDate.getTime();
+    const e = ev.endDate.getTime();
+    const dayIdx = Math.floor((s - monMid)/msPerDay);
+    if (dayIdx<0||dayIdx>=DAYS) continue;
+    const dayBase = monMid.getTime() + dayIdx*msPerDay;
+    for (let h=START_HOUR; h<END_HOUR; h++) {
+      const slotStart = dayBase + h*3600e3;
+      const slotEnd   = slotStart + 3600e3;
+      if (idx < PRIMARY_CALS.length) {
+        // sum minutes of overlap
+        const overlap = Math.min(e,slotEnd) - Math.max(s,slotStart);
+        if (overlap > 0) {
+          mat[dayIdx][h-START_HOUR] += overlap/60000;
+        }
+      } else {
+        // distraction: count capped events
+        if (s < slotEnd && e > slotStart) {
+          mat[dayIdx][h-START_HOUR] = Math.min(mat[dayIdx][h-START_HOUR]+1, MAX_DIST);
         }
       }
     }
   }
-  return b;
+  console.log(`  • Binned ${ALL_CALS[idx]} → first day-hours:`, mat[0].slice(0,5));
+  return mat;
 });
+const primaryBins    = bins.slice(0, PRIMARY_CALS.length);
+const distractionBin = bins[bins.length-1];
 
-// 6) Draw canvas & 7) render only past/current slots
+/////////////////////////////////////////////////////////
+// 5) Draw and log each slot’s decision
+console.log("Drawing slots…");
 const ctx = new DrawContext();
-ctx.size               = new Size(W, H);
+ctx.size               = new Size(W,H);
 ctx.respectScreenScale = true;
 ctx.opaque             = false;
 ctx.setFillColor(new Color("#000"));
 ctx.fillRect(new Rect(0,0,W,H));
 
-for (let di = 0; di < DAYS; di++) {
-  for (let hi = 0; hi < ROWS; hi++) {
-    if (di > currentDayIndex) continue;
-    if (di === currentDayIndex && hi > currentHourIndex) continue;
-    for (let ci = 0; ci < CALS.length; ci++) {
-      const colIndex = di * CALS.length + ci;
-      const x = SAFE_MARGIN + colIndex * (cellW + GRID_W);
-      const y = SAFE_MARGIN + hi       * (cellH + GRID_W);
-      let color;
-      if (ci === 0) {
-        const mins = bins[0][di][hi];
-        const idx = mins === 0 ? 0 : mins < 15 ? 1 : mins < 30 ? 2 : mins < 50 ? 3 : 4;
-        color = COLORS_F[idx];
-      } else {
-        const cnt = bins[1][di][hi];
-        color = COLORS_D[cnt];
-      }
-      ctx.setFillColor(new Color(color));
-      let path = new Path();
-      path.addRoundedRect(new Rect(x, y, cellW, cellH), R, R);
-      ctx.addPath(path);
-      ctx.fillPath();
-    }
+for (let d=0; d<DAYS; d++) {
+  for (let hr=0; hr<ROWS; hr++) {
+    if (d>currentDayIdx) break;
+    if (d===currentDayIdx && hr>currentHourIdx) break;
+
+    const y  = SAFE_MARGIN + hr*(cellH+GRID_W);
+    const x0 = SAFE_MARGIN + (d*2)*(cellW+GRID_W);
+    const x1 = x0 + cellW + GRID_W;
+
+    // — left: pick the primary with most minutes
+    const minutes = primaryBins.map(mb=>mb[d][hr]);
+    const winner  = minutes.indexOf(Math.max(...minutes));
+    const m       = minutes[winner];
+    const step    = m===0?0 : m<15?1 : m<30?2 : m<50?3 : 4;
+    const calName = PRIMARY_CALS[winner];
+    const colPrim = PALETTES[calName][step];
+
+    console.log(`Slot ${DAY_NAMES[d]} ${START_HOUR+hr}–${START_HOUR+hr+1}:`,
+        PRIMARY_CALS.map((n,i)=>`${n}=${minutes[i].toFixed(1)}m`).join(", "),
+        `→ winner=${calName} (step=${step})`
+    );
+
+    ctx.setFillColor(new Color(colPrim));
+    let p = new Path();
+    p.addRoundedRect(new Rect(x0,y,cellW,cellH), R,R);
+    ctx.addPath(p);
+    ctx.fillPath();
+
+    // — right: distraction
+    const cnt = distractionBin[d][hr];
+    const idx = Math.min(cnt, PALETTES.Distraction.length-1);
+    const colD = PALETTES.Distraction[idx];
+
+    console.log(`  Distraction count=${cnt} → color step=${idx}`);
+
+    ctx.setFillColor(new Color(colD));
+    p = new Path();
+    p.addRoundedRect(new Rect(x1,y,cellW,cellH), R,R);
+    ctx.addPath(p);
+    ctx.fillPath();
   }
 }
 
-// 8) Finalize widget
+console.log("✅ All slots drawn, finalizing widget.");
+
 const widget = new ListWidget();
 widget.backgroundImage = ctx.getImage();
 widget.setPadding(0,0,0,0);
+
+console.log("🎉 Widget generation complete!");
 Script.setWidget(widget);
 Script.complete();

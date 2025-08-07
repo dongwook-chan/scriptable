@@ -3,6 +3,7 @@
 // icon-color: red; icon-glyph: magic;
 
 // 대상 달력(CALENDAR_NAME): Focusmate
+// 집계 방식: hours per day
 // block 곡률(R): 3
 
 const SIZE           = 150;        // Small widget canvas size
@@ -14,7 +15,7 @@ const MAX_HOURS      = 9;          // cap for the lightest shade
 
 // GitHub palette, but level‐0 = dark grey, then 4 greens (dark→light)
 const COLORS = [
-  "#444444", // 0 h
+  "#333333", // 0 h
   "#007728", // >0 h
   "#02a232", // >MAX_HOURS*1/4
   "#0ac740", // >MAX_HOURS*2/4

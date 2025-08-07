@@ -1,23 +1,24 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: green; icon-glyph: magic;
-// CalendarHeatmapDistractionGitHub2
-// Small (≈155×155 pt) GitHub-style red heatmap of “Distraction” events
-// • Monday–row 0 … Sunday–row 6, as many cols as fit
-// • Only Mon–Wed in final column (today = Wednesday)
-// • 4 pt margin all around and between cells; transparent BG
 
-const SIZE = 150;     // Small widget approx size
-const ROWS = 7;       // days per week
-const M    = 4;       // margin (pts) between & around cells
+// 대상 달력(CALENDAR_NAME): Distraction
+// 집계 방식: event count per day
+// block 곡률(R): 3
+
+const SIZE = 150;            // Small widget approx size
+const ROWS = 7;              // days per week
+const M    = 4;              // margin (pts) between & around cells
+const CALENDAR_NAME = "Distraction"; // 불러올 캘린더 이름
+const R    = 4;              // cell 모서리 반경 (pts)
 
 // 5-step red palette (0 → 4+ events)
 const COLORS = [
-  "#ebedf0",  // 0 events
-  "#fee0d2",  // light
-  "#fc9272",  // medium
-  "#de2d26",  // dark
-  "#a50f15"   // very dark
+  "#333333", // 0
+  "#6e2222", // 1
+  "#952b2b", // 2
+  "#c84040", // 3
+  "#ff5f5f"  // ≥ 4
 ];
 
 // 1) Compute cell size and number of columns
@@ -30,20 +31,20 @@ let today = new Date();
 let dow   = today.getDay();                      // 0=Sun,1=Mon…
 let offsetToMon = (dow + 6) % 7;                 // 0 for Mon, 1 for Tue…
 let monThisWeek = new Date(
-  today.getFullYear(), today.getMonth(),
-  today.getDate() - offsetToMon
+    today.getFullYear(), today.getMonth(),
+    today.getDate() - offsetToMon
 );
 
 // 3) Compute start date (go back COLS−1 full weeks)
 let startDate = new Date(monThisWeek);
 startDate.setDate(startDate.getDate() - (COLS - 1) * 7);
 
-// 4) Load only the “Distraction” calendar
+// 4) Load only the 지정한 캘린더
 let allCals = await Calendar.forEvents();
-let distractionCal = allCals.find(c => c.title === "Distraction");
+let distractionCal = allCals.find(c => c.title === CALENDAR_NAME);
 let events = distractionCal
-  ? await CalendarEvent.between(startDate, today, [distractionCal])
-  : [];
+    ? await CalendarEvent.between(startDate, today, [distractionCal])
+    : [];
 
 // 5) Tally counts per date
 let counts = {};
@@ -74,13 +75,18 @@ for (let i = 0; i < COLS * ROWS; i++) {
   d.setDate(startDate.getDate() + col*7 + row);
   let c = counts[d.toDateString()] || 0;
   let level = c === 0
-    ? 0
-    : Math.min(1 + Math.floor((c / maxCount) * (COLORS.length - 2)), COLORS.length - 1);
+      ? 0
+      : Math.min(1 + Math.floor((c / maxCount) * (COLORS.length - 2)), COLORS.length - 1);
 
   let x = M + col * (cellSize + M) + 3;
   let y = M + row * (cellSize + M) + 2;
+
   ctx.setFillColor(new Color(COLORS[level]));
-  ctx.fillRect(new Rect(x, y, cellSize, cellSize));
+  // 사각형에 곡률 적용
+  let path = new Path();
+  path.addRoundedRect(new Rect(x, y, cellSize, cellSize), R, R);
+  ctx.addPath(path);
+  ctx.fillPath();
 }
 
 // 7) Create and set the widget

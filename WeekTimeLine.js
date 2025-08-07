@@ -1,14 +1,11 @@
-// ver 0.1.8
+// ver 0.1.9
 // Variables used by Scriptable.
 // icon-color: yellow; icon-glyph: magic;
-// CalendarHourlyHeatmapDual.js
-// Two‐column hourly heatmap for “Focusmate” (duration-based green) and “Distraction” (count-based red)
-//  • Hours 09–23, days Mon–Sun, left = Focusmate, right = Distraction
-//  • Focusmate blocks colored by total minutes in that hour
-//  • Distraction blocks colored by event count: darkest red = 1 event, lightest red ≥4 events
-//  • Single‐event red is now extra dark
 
-console.log("🟢 Widget generation started (ver 0.1.8)");
+// 대상 달력(CALENDAR_NAME): Focusmate, Distraction
+// block 곡률(R): 3
+
+console.log("🟢 Widget generation started (ver 0.1.9)");
 
 const W           = 364;
 const H           = 364;
@@ -20,6 +17,7 @@ const HOURS       = END_HOUR - START_HOUR; // 14 rows
 const DAYS        = 7;           // Mon…Sun
 const CALS        = ["Focusmate", "Distraction"];
 const MAX_EVENTS  = 4;           // cap for Distraction count mapping
+const R = 4; // corner radius for cells
 
 // Green palette for Focusmate / Red palette for Distraction (darkest at low counts)
 const COLORS_F = [
@@ -37,7 +35,7 @@ const COLORS_D = [
   "#ff5f5f"  // ≥ 4
 ];
 
-console.log("Constants:", { W, H, SAFE_MARGIN, GRID_W, START_HOUR, END_HOUR, HOURS, DAYS, CALS, MAX_EVENTS });
+console.log("Constants:", { W, H, SAFE_MARGIN, GRID_W, START_HOUR, END_HOUR, HOURS, DAYS, CALS, MAX_EVENTS, R });
 
 // 1) Compute content area & cell sizes
 const contentW = W - 2 * SAFE_MARGIN;
@@ -124,7 +122,10 @@ for (let di = 0; di < DAYS; di++) {
         color = COLORS_D[cnt];
       }
       ctx.setFillColor(new Color(color));
-      ctx.fillRect(new Rect(x, y, cellW, cellH));
+      let path = new Path();
+      path.addRoundedRect(new Rect(x, y, cellW, cellH), R, R);
+      ctx.addPath(path);
+      ctx.fillPath();
     }
   }
 }

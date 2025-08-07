@@ -47,6 +47,7 @@ let selectedCal = allCals.find(c => c.title === CALENDAR_NAME);
 let events      = selectedCal
     ? await CalendarEvent.between(startDate, today, [selectedCal])
     : [];
+console.log(`Loaded ${events.length} event(s) from calendar "${CALENDAR_NAME}"`);
 
 // 5) Tally event count per day
 let counts = {};
@@ -75,13 +76,18 @@ for (let col = 0; col < COLS; col++) {
     // skip future days in the last column
     if (col === COLS - 1 && row > offsetToMon) continue;
 
-    let d   = new Date(startDate);
+    let d       = new Date(startDate);
     d.setDate(startDate.getDate() + col * 7 + row);
     let evCount = counts[d.toDateString()] || 0;
 
     // map 0→dark grey, then 1…MAX_EVENTS to 4 shades of red
     let ratio = Math.min(evCount / MAX_EVENTS, 1);
     let level = Math.round(ratio * (COLORS.length - 1));
+
+    // **LOGGING:**
+    // console.log(
+    //     `${d.toDateString()} → count=${evCount}, ratio=${ratio.toFixed(2)}, level=${level}`
+    // );
 
     let x = M + col * (cellSize + M) + 3;
     let y = M + row * (cellSize + M) + 2;

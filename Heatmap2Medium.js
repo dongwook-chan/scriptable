@@ -5,6 +5,7 @@
 ////////////////////////////////////////////////////////////
 // Medium widget: Progress (left) + Activity (right)
 // Minimal shrink via internal insets (no spacers)
+// + Fitness mode: split right half into two tap zones
 ////////////////////////////////////////////////////////////
 
 const SIZE = 150;      // canvas for each half (same as small)
@@ -14,7 +15,7 @@ const R    = 3;        // cell corner radius
 const GAP  = 0;        // space between halves
 
 // Tune these to clear the corner mask with minimal shrink
-const INSET_T = 5;    // mostly needed
+const INSET_T = 5;     // mostly needed
 const INSET_B = 1.1;
 const INSET_L = 0;
 const INSET_R = 0;
@@ -25,8 +26,9 @@ const PROGRESS_URL       = "shortcuts://run-shortcut?name=Open Progress Reminder
 const COLORS_AQUA        = ["#333333","#00524e","#007a78","#00a79f","#33cfc7"];
 
 // RIGHT: Fitness / Meditate (time-based toggle)
-const FITNESS_URL  = "https://hevy.com/routine/PyoUWcDSaxE"; // 23–9
-const MEDITATE_URL = "shortcuts://run-shortcut?name=meditate"; // 9–23
+const FITNESS_URL_MAIN   = "https://hevy.com/routine/PyoUWcDSaxE"; // top half (23–9)
+const FITNESS_URL_ALT    = "https://hevy.com/routine/D25AmK0DBDK"; // bottom half (23–9)
+const MEDITATE_URL       = "shortcuts://run-shortcut?name=meditate"; // 9–23
 const FITNESS_START_HOUR  = 23;
 const MEDITATE_START_HOUR = 9;
 
@@ -37,6 +39,12 @@ const FITNESS_COLORS       = ["#333333","#663f35","#b07a63","#ebb6a0","#ffe3d5"]
 const MEDITATE_CALENDAR    = "Meditate";
 const MEDITATE_MAX_MINUTES = 30;
 const MEDITATE_COLORS      = ["#333333","#5a3b82","#8761af","#b19ae1","#dccdfb"];
+
+// --- Mode override for testing: "auto" | "fitness" | "meditate"
+// You can also set the Widget Parameter to "fitness", "meditate", or "auto".
+const MODE_OVERRIDE = "fitness"; // ← set back to "auto" when done
+const PARAM = ((args && args.widgetParameter) ? String(args.widgetParameter) : "").trim().toLowerCase();
+const MODE  = (["auto","fitness","meditate"].includes(PARAM)) ? PARAM : MODE_OVERRIDE;
 
 // Shared date window & grid geometry
 const now       = new Date();
@@ -63,13 +71,16 @@ let monThisWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - of
 let startDate   = new Date(monThisWeek);
 startDate.setDate(startDate.getDate() - (COLS - 1) * 7);
 
-// Decide right-side mode
+// Decide right-side mode (uses override/parameter if provided)
+const isFitnessTime = (hour >= FITNESS_START_HOUR || hour < MEDITATE_START_HOUR);
+const useFitness = (MODE === "fitness") || (MODE === "auto" && isFitnessTime);
+
 let RIGHT_CALENDAR, RIGHT_COLORS, RIGHT_MAX, RIGHT_URL;
-if (hour >= FITNESS_START_HOUR || hour < MEDITATE_START_HOUR) {
+if (useFitness) {
   RIGHT_CALENDAR = FITNESS_CALENDAR;
   RIGHT_COLORS   = FITNESS_COLORS;
   RIGHT_MAX      = FITNESS_MAX_MINUTES;
-  RIGHT_URL      = FITNESS_URL;
+  RIGHT_URL      = FITNESS_URL_MAIN; // split tap zones applied below
 } else {
   RIGHT_CALENDAR = MEDITATE_CALENDAR;
   RIGHT_COLORS   = MEDITATE_COLORS;
@@ -108,7 +119,7 @@ function drawHeatmap(valuesByDay, palette, ratioFn) {
       const level = Math.round(ratio * (palette.length - 1));
 
       const x = INSET_L + M + c*(cellSize + M) + 6.5;
-      const y = INSET_T + M + r*(cellSize + M) + 1.5
+      const y = INSET_T + M + r*(cellSize + M) + 1.5;
 
       ctx.setFillColor(new Color(palette[level]));
       const path = new Path();
@@ -161,6 +172,16 @@ const activityImg = drawHeatmap(
     (_, key) => Math.min((minutes[key] || 0) / RIGHT_MAX, 1)
 );
 
+// helper: fully transparent image of a given size
+function transparentImage(w, h) {
+  const c = new DrawContext();
+  c.size = new Size(w, h);
+  c.opaque = false;
+  c.setFillColor(new Color("#000000", 0));
+  c.fillRect(new Rect(0, 0, w, h));
+  return c.getImage();
+}
+
 // Build
 const w = new ListWidget();
 w.backgroundColor = new Color("#000000");
@@ -169,15 +190,49 @@ w.setPadding(0, 0, 0, 0);
 const row = w.addStack();
 row.setPadding(0, 0, 0, 0);
 
+// Left (Progress)
 const left = row.addStack();
+left.setPadding(0, 0, 0, 0);
+const leftImg = left.addImage(progressImg);
+leftImg.imageSize = new Size(SIZE, SIZE);
 left.url = PROGRESS_URL;
-left.addImage(progressImg).imageSize = new Size(SIZE, SIZE);
 
+// Gap
 row.addSpacer(GAP);
 
+// Right (Activity)
 const right = row.addStack();
-right.url = RIGHT_URL;
-right.addImage(activityImg).imageSize = new Size(SIZE, SIZE);
+right.setPadding(0, 0, 0, 0);
+right.size = new Size(SIZE, SIZE);  // ensure the right side has a fixed area
+
+if (useFitness) {
+  // Fitness mode: background + two *sized* tappable halves
+  right.backgroundImage = activityImg;
+  right.layoutVertically();
+
+  const half1 = Math.floor(SIZE / 2);
+  const half2 = SIZE - half1;
+
+  const topTap = right.addStack();
+  topTap.setPadding(0, 0, 0, 0);
+  topTap.size = new Size(SIZE, half1);            // ← define tap area explicitly
+  topTap.url = FITNESS_URL_MAIN;
+  const topImg = topTap.addImage(transparentImage(SIZE, half1));
+  topImg.imageSize = new Size(SIZE, half1);
+
+  const bottomTap = right.addStack();
+  bottomTap.setPadding(0, 0, 0, 0);
+  bottomTap.size = new Size(SIZE, half2);         // ← define tap area explicitly
+  bottomTap.url = FITNESS_URL_ALT;
+  const bottomImg = bottomTap.addImage(transparentImage(SIZE, half2));
+  bottomImg.imageSize = new Size(SIZE, half2);
+
+} else {
+  // Meditate mode: single tap target
+  const img = right.addImage(activityImg);
+  img.imageSize = new Size(SIZE, SIZE);
+  right.url = RIGHT_URL;
+}
 
 Script.setWidget(w);
 Script.complete();

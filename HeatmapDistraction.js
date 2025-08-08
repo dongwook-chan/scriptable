@@ -11,7 +11,7 @@ const ROWS           = 7;          // days per column
 const M              = 4;          // fixed margin between & around cells
 const R              = 3;          // corner radius
 const CALENDAR_NAME  = "Distraction";// calendar to draw
-const MAX_EVENTS     = 4;          // cap for the lightest shade
+const MAX_EVENTS     = 30;          // cap for the lightest shade
 
 // 5-step red palette (0 → 4+ events)
 const COLORS = [

@@ -21,13 +21,16 @@ const R              = 3;           // corner radius
 const CALENDAR_NAME  = "Meditate";  // calendar to draw
 const MAX_MINUTES    = 30;          // cap for the lightest shade
 
+// 🔽 NEW: the Shortcut to run when tapping the widget
+const SHORTCUT_NAME  = "Meditate";
+
 // 5-step palette (0 → 30+ minutes), grey→bluish-purple
 const COLORS = [
-  "#333333", // 0
-  "#462c8a", // 1: deep bluish purple
-  "#5e4aad", // 2: rich mid-purple
-  "#8a7ecf", // 3: soft lavender
-  "#bfb3f1"  // 4: pastel lilac
+  "#333333", // 0분 (활동 없음)
+  "#5a3b82", // >0분 (깊은 인디고)
+  "#8761af", // >¼ MAX (중간 바이올렛)
+  "#b19ae1", // >½ MAX (부드러운 라벤더)
+  "#dccdfb"  // ≥ MAX (창백한 라일락)
 ];
 
 // 1) Compute cellSize & number of columns
@@ -110,5 +113,9 @@ let w = new ListWidget();
 w.backgroundColor = new Color("#000000");
 w.backgroundImage = ctx.getImage();
 w.setPadding(0, 0, 0, 0);
+
+// 🔽 NEW: make the widget open the 'Meditate' Shortcut when tapped
+w.url = "shortcuts://run-shortcut?name=" + encodeURIComponent(SHORTCUT_NAME);
+
 Script.setWidget(w);
 Script.complete();

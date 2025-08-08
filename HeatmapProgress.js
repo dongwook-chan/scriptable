@@ -11,6 +11,8 @@ const ROWS          = 7;            // days per column
 const M             = 4;            // fixed margin between & around cells
 const R             = 3;            // corner radius
 const LIST_NAME     = "Progress";   // reminder list to draw
+const URL = "shortcuts://run-shortcut?name=Open Progress Reminders";
+
 // 5-step aqua palette (ratio 0→1)
 const COLORS_AQUA = [
   "#333333", // 0.00
@@ -111,5 +113,6 @@ let w = new ListWidget();
 w.backgroundColor = new Color("#000000");
 w.backgroundImage = ctx.getImage();
 w.setPadding(0, 0, 0, 0);
+w.url = URL;
 Script.setWidget(w);
 Script.complete();

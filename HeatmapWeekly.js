@@ -20,67 +20,42 @@ const PRIMARY_CALS    = ["Focusmate","Fitness","Meditate"];
 const DISTRACTION_CAL = "Distraction";
 const ALL_CALS        = [...PRIMARY_CALS, DISTRACTION_CAL];
 
+const URL = "scriptable:///run/oct";
+
 // day names for logging
 const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 // color ramps
 const PALETTES = {
-  Focusmate:   ["#333","#174d25","#1e7533","#32b150","#40d663"],
-  Fitness:     ["#333","#FFD1DC","#FFADC1","#FF7791","#FF3E61"],
-  Meditate:  ["#333","#79C9B1","#53B69B","#2F9C82","#0A8068"],
-  Distraction: ["#333","#6e2222","#952b2b","#c84040","#ff5f5f"]
+  Focusmate:   [
+      "#333",
+    "#174d25",
+    "#1e7533",
+    "#32b150",
+    "#40d663"
+  ],
+  Fitness:     [
+      "#333", // 0: no activity
+    "#663f35", // 1: muted terracotta–brown
+    "#b07a63", // 2: rich apricot–peach
+    "#ebb6a0", // 3: soft light peach
+    "#ffe3d5"  // 4: pale creamy skin tone
+  ],
+  Meditate:  [
+      "#333",
+    "#5a3b82", // 1: deep indigo
+    "#8761af", // 2: mid purple
+    "#b19ae1", // 3: soft lavender
+    "#dccdfb"  // 4: pale lilac
+  ],
+  Distraction: [
+      "#333",
+    "#6e2222",
+    "#952b2b",
+    "#c84040",
+    "#ff5f5f"
+  ]
 };
-
-const COLORS_ORANGE = [
-  "#333333", // 0
-  "#7f3f00", // 1: dark burnt orange
-  "#b25a00", // 2: medium rich orange
-  "#e0741b", // 3: vibrant orange
-  "#ffac33"  // 4: light golden orange
-];
-
-const COLORS_PINK = [
-  "#333333", // 0
-  "#702039", // 1: deep rose
-  "#b65078", // 2: rich pink
-  "#e789b1", // 3: soft pink
-  "#fccce6"  // 4: pastel baby-pink
-];
-
-const COLORS_AQUA = [
-  "#333333", // 0
-  "#00524e", // 1: dark teal
-  "#007a78", // 2: medium teal
-  "#00a79f", // 3: bright aqua
-  "#33cfc7"  // 4: light minty aqua
-];
-
-// Bluish-Purple levels
-const COLORS_BLUISH_PURPLE = [
-  "#333333", // 0: no activity
-  "#412b58", // 1: deep bluish-purple
-  "#5c4985", // 2: medium slate purple
-  "#7a6cb3", // 3: vibrant bluish-purple
-  "#9a8edf"  // 4: light pastel bluish-purple
-];
-
-// Bluish-Purple levels (extra-blue)
-const COLORS_BLUISH_PURPLE = [
-  "#333333", // 0: no activity
-  "#2e2f65", // 1: dark navy-purple
-  "#3f4dc0", // 2: medium vibrant indigo
-  "#5975eb", // 3: bright periwinkle-blue
-  "#8aa9fe"  // 4: light sky-blue purple
-];
-
-const COLORS_PURPLE = [
-  "#333333", // 0
-  "#3d1f47", // 1: deep plum
-  "#602b70", // 2: rich purple
-  "#914da5", // 3: lavender purple
-  "#b682d1"  // 4: light lilac
-];
-
 
 /////////////////////////////////////////////////////////
 // 1) Layout
@@ -196,10 +171,9 @@ for (let d=0; d<DAYS; d++) {
     const calName = PRIMARY_CALS[winner];
     const colPrim = PALETTES[calName][step];
 
-    console.log(`Slot ${DAY_NAMES[d]} ${START_HOUR+hr}–${START_HOUR+hr+1}:`,
-        PRIMARY_CALS.map((n,i)=>`${n}=${minutes[i].toFixed(1)}m`).join(", "),
-        `→ winner=${calName} (step=${step})`
-    );
+    console.log(`Slot ${DAY_NAMES[d]} ${START_HOUR+hr}–${START_HOUR+hr+1}:`);
+    console.log(PRIMARY_CALS.map((n,i)=>`${n}=${minutes[i].toFixed(1)}m`).join(", "));
+    console.log(`ㄴ→ winner=${calName} (step=${step})`);
 
     ctx.setFillColor(new Color(colPrim));
     let p = new Path();
@@ -227,6 +201,7 @@ console.log("✅ All slots drawn, finalizing widget.");
 const widget = new ListWidget();
 widget.backgroundImage = ctx.getImage();
 widget.setPadding(0,0,0,0);
+widget.url = URL;
 
 console.log("🎉 Widget generation complete!");
 Script.setWidget(widget);

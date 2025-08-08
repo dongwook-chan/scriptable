@@ -40,9 +40,9 @@ const MEDITATE_CALENDAR    = "Meditate";
 const MEDITATE_MAX_MINUTES = 30;
 const MEDITATE_COLORS      = ["#333333","#5a3b82","#8761af","#b19ae1","#dccdfb"];
 
-// --- Mode override for testing: "auto" | "fitness" | "meditate"
+// --- Mode override: "auto" | "fitness" | "meditate"
 // You can also set the Widget Parameter to "fitness", "meditate", or "auto".
-const MODE_OVERRIDE = "fitness"; // ← set back to "auto" when done
+const MODE_OVERRIDE = "auto"; // ← back to schedule
 const PARAM = ((args && args.widgetParameter) ? String(args.widgetParameter) : "").trim().toLowerCase();
 const MODE  = (["auto","fitness","meditate"].includes(PARAM)) ? PARAM : MODE_OVERRIDE;
 
@@ -203,7 +203,7 @@ row.addSpacer(GAP);
 // Right (Activity)
 const right = row.addStack();
 right.setPadding(0, 0, 0, 0);
-right.size = new Size(SIZE, SIZE);  // ensure the right side has a fixed area
+right.size = new Size(SIZE, SIZE);  // ensure fixed area
 
 if (useFitness) {
   // Fitness mode: background + two *sized* tappable halves
@@ -215,14 +215,14 @@ if (useFitness) {
 
   const topTap = right.addStack();
   topTap.setPadding(0, 0, 0, 0);
-  topTap.size = new Size(SIZE, half1);            // ← define tap area explicitly
+  topTap.size = new Size(SIZE, half1);
   topTap.url = FITNESS_URL_MAIN;
   const topImg = topTap.addImage(transparentImage(SIZE, half1));
   topImg.imageSize = new Size(SIZE, half1);
 
   const bottomTap = right.addStack();
   bottomTap.setPadding(0, 0, 0, 0);
-  bottomTap.size = new Size(SIZE, half2);         // ← define tap area explicitly
+  bottomTap.size = new Size(SIZE, half2);
   bottomTap.url = FITNESS_URL_ALT;
   const bottomImg = bottomTap.addImage(transparentImage(SIZE, half2));
   bottomImg.imageSize = new Size(SIZE, half2);
